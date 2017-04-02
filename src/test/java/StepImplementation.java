@@ -1,47 +1,55 @@
+import com.thoughtworks.gauge.AfterScenario;
+import com.thoughtworks.gauge.BeforeScenario;
 import com.thoughtworks.gauge.Step;
-import com.thoughtworks.gauge.Table;
-import com.thoughtworks.gauge.TableRow;
+import org.junit.Assert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.MarionetteDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
 
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
+import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
 
 public class StepImplementation {
+    private WebDriver driver;
 
-    private HashSet<Character> vowels;
+    @BeforeScenario
+    public void setup() {
+        System.setProperty("webdriver.gecko.driver", Paths.get(System.getProperty("user.dir"), "drivers", "geckodriver.exe").toString());
+        DesiredCapabilities firefoxCapability = DesiredCapabilities.firefox();
+        firefoxCapability.setCapability("marionette", true);
+        driver = new MarionetteDriver(firefoxCapability);
 
-    @Step("Vowels in English language are <vowelString>.")
-    public void setLanguageVowels(String vowelString) {
-        vowels = new HashSet<>();
-        for (char ch : vowelString.toCharArray()) {
-            vowels.add(ch);
-        }
+        driver.manage().window().maximize();
+        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
     }
 
-    @Step("The word <word> has <expectedCount> vowels.")
-    public void verifyVowelsCountInWord(String word, int expectedCount) {
-        int actualCount = countVowels(word);
-        assertEquals(expectedCount, actualCount);
+    @AfterScenario
+    public void teardown() {
+        driver.quit();
     }
 
-    @Step("Almost all words have vowels <wordsTable>")
-    public void verifyVowelsCountInMultipleWords(Table wordsTable) {
-        for (TableRow row : wordsTable.getTableRows()) {
-            String word = row.getCell("Word");
-            int expectedCount = Integer.parseInt(row.getCell("Vowel Count"));
-            int actualCount = countVowels(word);
-
-            assertEquals(expectedCount, actualCount);
-        }
+    @Step("Navigate to <url>")
+    public void navigate_to(String url) {
+        driver.get(url);
     }
 
-    private int countVowels(String word) {
-        int count = 0;
-        for (char ch : word.toCharArray()) {
-            if (vowels.contains(ch)) {
-                count++;
-            }
-        }
-        return count;
+    @Step("Log in with credentials <username> and <password>")
+    public void login_with(String username, String password) {
+        WebElement usernameInput = driver.findElement(By.id("username"));
+        usernameInput.sendKeys(username);
+
+        WebElement passwordInput = driver.findElement(By.id("password"));
+        passwordInput.sendKeys(password);
+
+        WebElement loginButton = driver.findElement(By.xpath("//button[text()='Sign in']"));
+        loginButton.click();
+    }
+
+    @Step("The dashboard should be displayed")
+    public void check_dashboard_displayed() {
+        WebElement dashboard = driver.findElement(By.linkText("Dashboard"));
+        Assert.assertTrue(dashboard.isDisplayed());
     }
 }
