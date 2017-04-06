@@ -28,7 +28,7 @@ public class StepImplementation {
 
     @AfterScenario
     public void teardown() {
-        driver.quit();
+        if (driver != null) driver.quit();
     }
 
     @Step("Navigate to The Bookery app")
